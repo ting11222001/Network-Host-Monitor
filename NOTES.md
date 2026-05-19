@@ -134,3 +134,36 @@ A simple way to think about it:
 ```
 ping command  -->  subprocess.PIPE  -->  result.stdout  -->  your Python code
 ```
+
+## Add Linux Support
+
+I used GitHub codespace for the Linux ping command and parse related code in the script.
+
+The ping command is not installed by default in many minimal Linux containers, including GitHub Codespaces.
+
+So I ended up installing the `ping` package like this:
+```
+sudo apt-get update && sudo apt-get install -y inetutils-ping
+```
+
+But when I run:
+```
+ping -c 1 -W 2 8.8.8.8
+```
+
+It prints:
+```
+PING 8.8.8.8 (8.8.8.8): 56 data bytes
+--- 8.8.8.8 ping statistics ---
+1 packets transmitted, 0 packets received, 100% packet loss
+```
+
+That output shows 100% packet loss, which means the ping was blocked. This is common in cloud environments like GitHub Codespaces. 
+
+ICMP (the protocol ping uses) is often blocked by the firewall there.
+
+So I decided to replace ping with a TCP port check i.e. instead of ICMP ping, connect to port 443 (HTTPS) on each host.
+
+So the `ping_host()` method:
+- On Linux/macOS inside Codespaces, use the TCP socket method.
+- On Windows,I keep the ICMP ping.

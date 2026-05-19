@@ -9,6 +9,7 @@ import csv
 from datetime import datetime
 import time
 import platform
+import socket
 
 HOSTS = [
     "8.8.8.8",      # Google DNS
@@ -26,12 +27,13 @@ def ping_host(host):
     Currently implemented for Windows. For other OSes, it will print a message and return None.
     """
     system = platform.system()
+    print(f"Platform using: {system}")
 
-    # Windows: ping -n 1 -w 2000 <host>
+    # Windows: ping -n 1 -w 2000 <host> but the Linux: ping -c 1 -W 2 <host>
     if system == "Windows":
         command = ["ping", "-n", "1", "-w", "2000", host]
     else:
-        command = None
+        command = ["ping", "-c", "1", "-W", "2", host]
 
     try:
         result = subprocess.run(
@@ -51,7 +53,14 @@ def ping_host(host):
                     return float(latency_str)
         else:
             # Linux/macOS output
-            print("Unsupported OS for pinging. Please run this script on Windows.")
+            try:
+                start = time.time()
+                with socket.create_connection((host, 443), timeout=2):
+                    pass
+                end = time.time()
+                return (end - start) * 1000
+            except (socket.timeout, socket.error):
+                return None
 
         return None
     except Exception as e:
