@@ -7,6 +7,7 @@ Pings a list of hosts, measures latency, and logs results to a CSV file.
 import subprocess
 import csv
 from datetime import datetime
+import time
 import platform
 
 HOSTS = [
@@ -16,7 +17,7 @@ HOSTS = [
 ]
 
 OUTPUT_FILE = "results.csv"
-LATENCY_THRESHOLD_MS = 100  # Flag as "slow" if above this value. Will try to lower down this threshold to test edge cases
+LATENCY_THRESHOLD_MS = 100  # Flag as "slow" if above this value. Will try to lower down this threshold to test edge cases e.g. 5 ms
 
 def ping_host(host):
     """
@@ -89,6 +90,11 @@ def run_check():
             latency = ping_host(host)
             status = get_status(latency)
             write_result(writer, host, latency, status, timestamp)
+            # Print status to terminal
+            if status == "DOWN":
+                print(f"  *** ALERT: {host} is not responding ***")
+            elif status == "SLOW":
+                print(f"  *** WARNING: {host} latency is high ({latency:.2f} ms) ***")
 
 def main():
     # Write CSV header if file does not exist yet
@@ -104,8 +110,12 @@ def main():
     print(f"Results will be saved to: {OUTPUT_FILE}")
     print(f"Latency threshold: {LATENCY_THRESHOLD_MS} ms")
 
-    run_check()
-    print("\nDone. Open results.csv to see the output.")
+    # Main loop: run checks every 10 seconds indefinitely
+    while True:
+        run_check()
+        print("\nDone. Open results.csv to see the output.")
+        print("Waiting 10 seconds...")
+        time.sleep(10)
 
 if __name__ == "__main__":
     main()
