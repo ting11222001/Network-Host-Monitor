@@ -7,6 +7,7 @@ Pings a list of hosts, measures latency, and logs results to a CSV file.
 
 import csv
 from datetime import datetime
+import platform
 
 HOSTS = [
     "8.8.8.8",      # Google DNS
@@ -17,11 +18,29 @@ HOSTS = [
 OUTPUT_FILE = "results.csv"
 LATENCY_THRESHOLD_MS = 100  # Flag as "slow" if above this value. Will try to lower down this threshold to test edge cases
 
+def ping_host(host):
+    """
+    Pings a single host once.
+    Returns latency in ms as a float, or None if the host is unreachable.
+    """
+    system = platform.system()
+    print(f"Pinging {host} on {system}...")
+
+def get_status(latency):
+    """
+    Returns a status string based on latency.
+    """
+    if latency is None:
+        return "DOWN"
+    if latency > LATENCY_THRESHOLD_MS:
+        return "SLOW"
+    return "UP"
+
 def write_result(writer, host, latency, status, timestamp):
     """
     Writes one row to the CSV file.
     """
-    latency_display = f"{latency}" if latency is not None else "N/A"
+    latency_display = f"{latency:.2f}" if latency is not None else "N/A"
     writer.writerow([timestamp, host, latency_display, status])
 
 def run_check():
@@ -36,8 +55,8 @@ def run_check():
         writer = csv.writer(csv_file)
 
         for host in HOSTS:
-            latency = None
-            status = "unknown"
+            latency = ping_host(host)
+            status = get_status(latency)
             write_result(writer, host, latency, status, timestamp)
 
 
