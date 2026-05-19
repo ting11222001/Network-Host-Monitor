@@ -4,7 +4,7 @@ Network Host Monitor - Phase 1
 
 Pings a list of hosts, measures latency, and logs results to a CSV file.
 """
-
+import subprocess
 import csv
 from datetime import datetime
 import platform
@@ -22,9 +22,40 @@ def ping_host(host):
     """
     Pings a single host once.
     Returns latency in ms as a float, or None if the host is unreachable.
+    Currently implemented for Windows. For other OSes, it will print a message and return None.
     """
     system = platform.system()
-    print(f"Pinging {host} on {system}...")
+
+    # Windows: ping -n 1 -w 2000 <host>
+    if system == "Windows":
+        command = ["ping", "-n", "1", "-w", "2000", host]
+    else:
+        command = None
+
+    try:
+        result = subprocess.run(
+            command,
+            stdout=subprocess.PIPE,     # With PIPE: output is silent in the terminal but accessible via result.stdout.
+            text=True
+        )
+        output = result.stdout
+
+        # Parse latency from ping output
+        if system == "Windows":
+            # Windows output example: "Average = 14ms"
+            for line in output.splitlines():
+                if "Average" in line:
+                    parts = line.split("=")
+                    latency_str = parts[-1].strip().replace("ms", "")
+                    return float(latency_str)
+        else:
+            # Linux/macOS output
+            print("Unsupported OS for pinging. Please run this script on Windows.")
+
+        return None
+    except Exception as e:
+        print(f"Error pinging {host}: {e}")
+        return None
 
 def get_status(latency):
     """
@@ -58,9 +89,6 @@ def run_check():
             latency = ping_host(host)
             status = get_status(latency)
             write_result(writer, host, latency, status, timestamp)
-
-
-
 
 def main():
     # Write CSV header if file does not exist yet
