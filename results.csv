@@ -1,1 +1,4 @@
 timestamp,host,latency_ms,status
+2026-05-19 15:02:00,8.8.8.8,N/A,unknown
+2026-05-19 15:02:00,1.1.1.1,N/A,unknown
+2026-05-19 15:02:00,github.com,N/A,unknown
